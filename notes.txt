@@ -1,0 +1,45 @@
+Approach:
+
+First get the records from the database, create email content for them and store it in a job queue. Have used Gearman for it. Emails are send with job workers.
+
+Calculation while making script live(As per to process data)
+considering if 10 emails are send in 1sec, that means we can send 10 * 60 * 60 = 36000 emails with script in 1 hour. so number of workers that we need to create is calulated as follows
+
+No of workers = (no. of users to send email/ 360000)
+According to the above calculation we can add workers in supervisor
+
+Testing Data. I havetested my script with the folloeing data. I wasnt able to increase teh number of processors because of my system hardware constraints
+No. of users to send email = 1 crore
+Number of workers = 30
+
+
+
+***********************************************************************************************
+List of files and its purpose. Debug Flag is just added for testing purpose.I have added sent column in users table just for testing pupose
+
+1) sendNewsletter.php
+
+	1) Makes Gearman client 
+	2) Forloop which sets a offset
+	3) Gets the data from the database as per the offset and limit 
+	4) Once we get the resultset, those records are processed to get email content and are added as a background task.
+
+Note: Limit and number of times forloop should run can be changed as per the number of records we need to process
+
+
+2) users.php
+	1) contains function 'getBody' which returns the email content of the user on teh basis of email passed.
+
+3) usersDb.php
+	1) Establishes a datbase connection
+	2) function getUsersList - gets users on the basis of offset and limit
+	3) function markEmailsSent - update flag as sent whose background job is added
+
+4) communication.php
+	1) function sendEmail -  will contain code to send an email
+
+5) sendEmailServer.php
+	1) Makes a Gearman worker which calls the communication-sendEmail function to send Emails
+
+6) supervisord.conf
+    It is userd to monitor and control a number of processes.
